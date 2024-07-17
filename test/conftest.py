@@ -1,7 +1,7 @@
 import pytest
 import os
 import urllib
-from test.load_test_model import load_torch_model
+from models.load_model import load_torch_model
 from torch.nn import Module
 from typing import Callable
 

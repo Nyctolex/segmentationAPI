@@ -1,110 +1,17 @@
 
 
+from models.utils import visulize_diff
+from models.utils import load_dummy_image
 from utils.util import timeit
 
 import torch
-
-
 import argparse
 import numpy as np
-import urllib
-from PIL import Image
-from model_wrappers import torch_to_onnx
-from test.load_test_model import load_torch_model
+from models.utils import torch_to_onnx
+from models.load_model import load_torch_model
 from onnxruntime.capi.onnxruntime_inference_collection import InferenceSession
-from utils.losses import MSE
-import matplotlib.pyplot as plt
-from typing import Optional
+from models.utils import MSE
 from loguru import logger
-
-
-def segment_prediction_to_image(logits: np.array, outputsize: tuple[int, int] = None) -> np.array:
-    """Creates an image from a segment model's prediction. The function return a numpy image where each class is colored
-    with a different color.
-
-    Args:
-        logits (np.array): The logit prediction of the model (unbatched)
-        outputsize (tuple[int, int], optional): The output's image size. Defaults to None.
-
-    Returns:
-        np.array: The color image
-    """
-    output_predictions = logits.argmax(0)
-    n_classes = logits.shape[0]
-    # create the color palette according to the number of classes
-    palette = np.array([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-    colors = np.array([i for i in range(n_classes)])[:, None] * palette
-    colors = (colors % 255).astype("uint8")
-    colored_image = Image.fromarray(output_predictions.astype(np.uint8))
-    if outputsize:
-        colored_image = colored_image.resize(outputsize)
-    colored_image.putpalette(colors)
-    return np.array(colored_image)
-
-
-def get_compair_image(img1: np.array, img2: np.array) -> np.array:
-    """Gets two images and return an image that has white pixels on places where the two images mismatch.
-
-    Args:
-        img1 (np.array): The first image
-        img2 (np.array): The second image
-
-    Returns:
-        np.array: The difference image
-    """
-    mask = np.any(img1 != img2, axis=0)
-    # Create an output array for visualization
-    visualization_array = np.zeros_like(img1[0], dtype=np.uint8)  # Initialize as black image
-    visualization_array[mask] = 255  # Set differing pixels to white (255)
-    return visualization_array
-
-
-
-def visulize_diff(source_image: np.ndarray, torch_pred: np.array, onnx_prediction: np.array, text: Optional[str] = None):
-    """Visualizing the difference between the results of the two segmentation models
-
-    Args:
-        source_image (np.ndarray): The original image used for prediction
-        torch_pred (np.array): The prediction of the torch model (logits, unbachted)
-        onnx_prediction (np.array): The prediction of the onnx model (logits, unbachted)
-        text (Optional[str], optional): Additional text that would be added to the title. Defaults to None.
-    """
-    
-    fig, axes = plt.subplots(2, 2)
-    axes[0, 0].imshow(segment_prediction_to_image(torch_pred))
-    axes[0,0].set_title('Torch result')
-
-    axes[0, 1].imshow(segment_prediction_to_image(onnx_prediction))
-    axes[0,1].set_title('Onnx result')
-
-    diff_img = get_compair_image(torch_pred, onnx_prediction)
-    axes[1, 0].imshow(diff_img, cmap='gray')
-    axes[1,0].set_title('Difference (white)')
-
-    axes[1, 1].imshow(source_image)
-    axes[1,1].set_title('Source image')
-
-    title = f'Pytorch pred vs Onnx pred'
-    if text:
-        title  = f'{title}\n{text}'
-    fig.suptitle(title)
-    plt.tight_layout()
-    plt.show()
-
-
-
-def load_dummy_image() -> Image.Image:
-    url, filename = ("https://github.com/pytorch/hub/raw/master/images/deeplab1.png", "deeplab1.png")
-    try: urllib.URLopener().retrieve(url, filename)
-    except: urllib.request.urlretrieve(url, filename)
-    input_image = Image.open(filename)
-    input_image = input_image.convert("RGB")
-    return input_image
-
-
-
-
-
 
 
 def main():
