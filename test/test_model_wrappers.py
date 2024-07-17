@@ -126,7 +126,6 @@ class TestOnnxSegmentationWrapper(unittest.TestCase):
     def test_predict_single(self):
         to_float = lambda data: resize(data.astype(np.float32),(520, 649))
         
-        
         wrapper = OnnxSegmentationWrapper(model=self.model, preprocessor = to_float)
         res = wrapper.predict_single(self.image_path)
         assert isinstance(res, np.array)

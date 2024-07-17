@@ -1,9 +1,15 @@
 import pytest
 import os
+from fastapi.testclient import TestClient
+from main import app
 import urllib
 from models.load_model import load_torch_model
 from torch.nn import Module
 from typing import Callable
+
+@pytest.fixture
+def client():
+    return TestClient(app)
 
 @pytest.fixture
 def image_path() -> str:

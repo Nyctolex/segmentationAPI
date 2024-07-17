@@ -1,5 +1,13 @@
 from datetime import datetime, timedelta
 from typing import Callable
+import io
+import PIL
+
+def plot_to_image(fig):
+    buf = io.BytesIO()
+    fig.savefig(buf)
+    buf.seek(0)
+    return PIL.Image.open(buf)
 
 def measure_time(func: Callable, args: tuple ) -> timedelta:
     """Calculate the runtime of the given function

@@ -60,7 +60,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # #TODO
-    # parser = argparse.ArgumentParser(description = 'Say hello')
-    # parser.add_argument('name', help='your name, enter it')
-    # args = parser.parse_args()

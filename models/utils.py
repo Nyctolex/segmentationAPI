@@ -10,14 +10,15 @@ from PIL import Image
 import numpy as np
 from PIL.Image import Image as PILImage
 from typing import Optional
-
+import urllib
+import os
 
 
 def vector_to_pil(image: Tensor | PILImage | np.ndarray) -> PILImage:
     if isinstance(image, PILImage):
         return image
-    elif isinstance(image, np.array):
-        return Image.fromarray(image.astype(np.unint8))
+    elif isinstance(image, np.ndarray):
+        return Image.fromarray(image.astype(np.uint8))
     elif isinstance(image, Tensor):
         return to_pil_image(image)
     raise TypeError('Image is of unsupported type')
@@ -73,7 +74,7 @@ class ImageToVector:
         raise TypeError(f'Type {type(image)} is not supported')
 
 
-def segment_prediction_to_image(logits: np.array, outputsize: tuple[int, int] = None) -> np.array:
+def segment_prediction_to_image(logits: np.array, outputsize: tuple[int, int] = None) -> PILImage:
     """Creates an image from a segment model's prediction. The function return a numpy image where each class is colored
     with a different color.
 
@@ -94,7 +95,7 @@ def segment_prediction_to_image(logits: np.array, outputsize: tuple[int, int] = 
     if outputsize:
         colored_image = colored_image.resize(outputsize)
     colored_image.putpalette(colors)
-    return np.array(colored_image)
+    return colored_image.convert('RGB')
 
 
 def MSE(vector1: np.ndarray, vector2: np.ndarray) -> float:

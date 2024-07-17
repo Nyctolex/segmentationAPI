@@ -166,6 +166,8 @@ class SegmentationModelAI():
         else:
             raise TypeError(f'Given model type ({type(model)}) is not supported. The supported types are: {Module}, {InferenceSession}')
 
-    def __call__(self, image: ImageType) -> Tensor | np.ndarray:
+    def __call__(self, image: ImageType) -> np.ndarray:
         res = self.model.predict_single(image)
+        if isinstance(res, Tensor):
+            res = res.detach().cpu().numpy()
         return res
