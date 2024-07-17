@@ -36,9 +36,6 @@ def torch_to_onnx(model: Module, dummy_batch: Tensor) -> InferenceSession:
     return onnx_model
 
 
-
-
-
 class ImageToVector:
     
     @classmethod
