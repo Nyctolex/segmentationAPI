@@ -127,9 +127,8 @@ class OnnxSegmentationWrapper(ModelWrapper):
         """
         if self.preprocessor:
             images = self.preprocessor(images)
-        # model_input = {x[0]: x[1] for x in zip(self.input_names, images)}
         model_input = {self.model.get_inputs()[0].name: images}
-        return self.model.run([n.name for n in self.model.get_outputs()], model_input)
+        return self.model.run(self.output_names, model_input)[0]
     
     @staticmethod
     def permute_image(image: np.array) -> np.array:
@@ -153,12 +152,12 @@ class OnnxSegmentationWrapper(ModelWrapper):
         image = self.permute_image(image)
         # Expand dimmentions
         image = image[np.newaxis, :]
-        return self.predict_batch(image)[1:]
+        return self.predict_batch(image)[0]
 
 
 
-class SegmentationModelAI():
-    def __init__(self, model, preprocessor: Optional[Callable] = None):
+class SegmentationModelAI:
+    def __init__(self, model, preprocessor: Optional[Callable] = None): #use onnx
         if isinstance(model, Module):
             self.model = TorchSegmentationWrapper(model, preprocessor)
         elif isinstance(model, InferenceSession):

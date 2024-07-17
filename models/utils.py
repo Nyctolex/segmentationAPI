@@ -3,6 +3,7 @@ from numpy import ndarray
 import onnxruntime as rt
 from onnxruntime.capi.onnxruntime_inference_collection import InferenceSession
 from torch.nn import Module
+import torch
 from uuid import uuid4
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 from torch import Tensor, onnx
@@ -154,6 +155,11 @@ def visulize_diff(source_image: np.ndarray, torch_pred: np.array, onnx_predictio
 
 
 def load_dummy_image() -> Image.Image:
+    """Loading a dummpy image for the model
+
+    Returns:
+        Image.Image: A dummpy image
+    """
     url, filename = ("https://github.com/pytorch/hub/raw/master/images/deeplab1.png", "deeplab1.png")
     try: urllib.URLopener().retrieve(url, filename)
     except: urllib.request.urlretrieve(url, filename)

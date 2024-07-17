@@ -106,29 +106,24 @@ class TestOnnxSegmentationWrapper(unittest.TestCase):
         OnnxSegmentationWrapper(model=self.model)
     
     def test_predict_batch(self):
-        to_float = lambda data: resize(data.astype(np.float32),(520, 649))
-        
+        # to_float = lambda data: resize(data.astype(np.float32),(520, 649))
         
         wrapper = OnnxSegmentationWrapper(model=self.model)
         image = ImageToVector.to_numpy(self.image_path)
         image = np.transpose(image, (2, 0, 1))
         image = image.astype(np.float32)
-        image = resize(image, (520, 649))
-
+        image = resize(image, (3, 520, 649))
         image = image[np.newaxis, :]
 
-
-
         res = wrapper.predict_batch(image)
-        # assert isinstance(res, np.array)
-        # assert len(res.shape) == 3
+        assert isinstance(res, np.ndarray)
+        assert len(res.shape) == 4
 
     def test_predict_single(self):
-        to_float = lambda data: resize(data.astype(np.float32),(520, 649))
-        
-        wrapper = OnnxSegmentationWrapper(model=self.model, preprocessor = to_float)
+        preprocessor = lambda data: resize(data.astype(np.float32),(1, 3, 520, 649))
+        wrapper = OnnxSegmentationWrapper(model=self.model, preprocessor = preprocessor)
         res = wrapper.predict_single(self.image_path)
-        assert isinstance(res, np.array)
+        assert isinstance(res, np.ndarray)
         assert len(res.shape) == 3
 
 
