@@ -103,7 +103,6 @@ class TorchSegmentationWrapper(ModelWrapper):
         return self.predict_batch(image.unsqueeze(0)).squeeze(0)
 
 
-
 class OnnxSegmentationWrapper(ModelWrapper):
 
     def __init__(self, model: InferenceSession, preprocessor: Optional[Callable] = None):
@@ -116,16 +115,17 @@ class OnnxSegmentationWrapper(ModelWrapper):
     def supported_model_types(self):
         return (InferenceSession,)
 
-    def predict_batch(self, images: np.array) -> np.array:
+    def predict_batch(self, images: np.array, use_preprocessor = True) -> np.array:
         """Prediction of a batch
 
         Args:
             images (np.array): batch of images in shape [N, 3, H, W]
+            use_preprocessor (bool): should it use the preprocessor
 
         Returns:
             np.array: the result of the model
         """
-        if self.preprocessor:
+        if use_preprocessor and self.preprocessor:
             images = self.preprocessor(images)
         model_input = {self.model.get_inputs()[0].name: images}
         return self.model.run(self.output_names, model_input)[0]
@@ -136,10 +136,10 @@ class OnnxSegmentationWrapper(ModelWrapper):
         Permute image of [H, W, 3] to [3, H, W] if needed
         """
         if image.shape[0] != 3 and image.shape[-1] == 3:
-            image = np.transpose(image, (2, 0, 1))
+            image = np.transpose(image, (2, 1, 0))
         return image
     
-    def predict_single(self, image: ImageType) -> np.array:
+    def predict_single(self, image: ImageType, use_preprocessor=False) -> np.array:
         """Prediction of a single data point (unbatched)
 
         Args:
@@ -148,16 +148,17 @@ class OnnxSegmentationWrapper(ModelWrapper):
         Returns:
             np.array: The prediction of the model
         """
+        if self.preprocessor:
+            image = self.preprocessor(image)
         image = ImageToVector.to_numpy(image)
-        image = self.permute_image(image)
         # Expand dimmentions
         image = image[np.newaxis, :]
-        return self.predict_batch(image)[0]
+        return self.predict_batch(image, use_preprocessor=False)[0]
 
 
 
 class SegmentationModelAI:
-    def __init__(self, model, preprocessor: Optional[Callable] = None): #use onnx
+    def __init__(self, model, preprocessor: Optional[Callable] = None):
         if isinstance(model, Module):
             self.model = TorchSegmentationWrapper(model, preprocessor)
         elif isinstance(model, InferenceSession):

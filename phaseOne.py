@@ -12,6 +12,7 @@ from models.load_model import load_torch_model
 from onnxruntime.capi.onnxruntime_inference_collection import InferenceSession
 from models.utils import MSE
 from loguru import logger
+from PIL import Image
 
 
 def main():
@@ -21,6 +22,8 @@ def main():
     #load torch model
     logger.debug('Loading torch model')
     torch_model, torch_preprocessor = load_torch_model()
+
+    input_image = input_image.resize((649, 520), Image.BILINEAR)
     torch_image = torch_preprocessor(input_image).unsqueeze(0)
     np_image = torch_image.detach().cpu().numpy()
 
@@ -59,4 +62,7 @@ def main():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("pathh", type=str,  nargs='?', default=None, help="Path to the image to import for this demo")
+    args = parser.parse_args()
     main()
