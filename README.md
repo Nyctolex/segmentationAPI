@@ -30,7 +30,8 @@ uvicorn main:app --reload
 Then, follow this link in your browser: [http://127.0.0.1:8000/docs#/](http://127.0.0.1:8000/docs#/) and use the **“/api/infer”** rout to interact with the API using FastAPI's automatic GUI.
 You can upload any supported image file (currently, any image type supported by the PIL library) and send it to the server to get the resulting image:
 
-<img width="1094" alt="Screenshot 2024-07-18 at 16 01 03" src="https://github.com/user-attachments/assets/97f3ca2b-aae2-4660-ab38-77e434bc80de">
+<img width="1094" alt="Screenshot 2024-07-18 at 16 01 03" src="https://github.com/user-attachments/assets/c5514df5-2c4f-4ba4-b9f6-845108a16554">
+
 
 <img width="1086" alt="Screenshot 2024-07-18 at 16 02 55" src="https://github.com/user-attachments/assets/e42962fd-f402-415f-9e76-2be38f638a09">
 
