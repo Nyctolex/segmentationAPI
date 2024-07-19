@@ -3,27 +3,41 @@
 from models.utils import visulize_diff
 from models.utils import load_dummy_image
 from utils.util import timeit
-
+from typing import Callable, Optional
 import torch
 import argparse
 import numpy as np
+from torch.nn import Module
 from models.utils import torch_to_onnx
 from models.load_model import load_torch_model
-from onnxruntime.capi.onnxruntime_inference_collection import InferenceSession
 from models.utils import MSE
 from loguru import logger
 from PIL import Image
 
 
-def main():
+def phase_one(torch_model: Optional[Module] = None, torch_preprocessor: Optional[Callable] = None, 
+              photo_path: str = None, model_input_size: tuple[int, int] = (649, 520)):
+    """Transfers a torch vision to an onnx model, run tests and visualize the metrics between the two.
+
+    Args:
+        photo_path (str, optional): The photo used for evaluation. Defaults to None.
+        model_input_size (tuple[int, int], optional): The input dimmentions of the model. Defaults to (649, 520).
+    """
     # import an example image
     logger.debug('Importing test image')
-    input_image = load_dummy_image()
-    #load torch model
-    logger.debug('Loading torch model')
-    torch_model, torch_preprocessor = load_torch_model()
+    if photo_path:
+        input_image = Image.open(photo_path)
+    else:
+        input_image = load_dummy_image()
+    
+    if not torch_model:
+        #load torch model
+        logger.debug('Loading torch model')
+        torch_model, torch_preprocessor = load_torch_model()
+    else:
+        assert callable(torch_preprocessor), 'A callable preprocessor must be provided with the given model'
 
-    input_image = input_image.resize((649, 520), Image.BILINEAR)
+    input_image = input_image.resize(model_input_size, Image.BILINEAR)
     torch_image = torch_preprocessor(input_image).unsqueeze(0)
     np_image = torch_image.detach().cpu().numpy()
 
@@ -48,21 +62,16 @@ def main():
     # get l2 loss
     loss = MSE(onnx_res, torch_res)
 
-    # get the source image as (H,W,3)
-    image = np.transpose(np_image[0], (1, 2, 0))
-
     meta_data = f'Torch runtime: {torch_time:.2f} secs'
     meta_data += f'\nOnnx runtime: {onnx_time:.2f} secs'
     meta_data += f'\nL2 loss between predictions: {loss:.5f}'
-    visulize_diff(image, torch_res, onnx_res, meta_data)
-
-
+    visulize_diff(input_image, torch_res, onnx_res, meta_data)
 
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("pathh", type=str,  nargs='?', default=None, help="Path to the image to import for this demo")
+    parser.add_argument("--photo", type=str,  nargs='?', default=None, help="Path to the image to import for this demo")
     args = parser.parse_args()
-    main()
+    phase_one(photo_path=args.photo)

@@ -4,8 +4,10 @@ from fastapi.responses import StreamingResponse
 from services.segmentationInfer import segmentation_infer
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
-class ImageProcessRequest(BaseModel):
-    file: UploadFile
+from fastapi.responses import FileResponse
+
+class ErrorResponseModel(BaseModel):
+    detail: str
 
 router = APIRouter(
     prefix="/api/infer",
@@ -16,9 +18,11 @@ router = APIRouter(
 
 
 
-@router.post("/")
+@router.post("/", responses={
+    415: {"model": ErrorResponseModel},
+    500: {"model": ErrorResponseModel},
+})
 async def process_image_endpoint(file: UploadFile = File(...)):
-    # TODO: handle errors, pydantic
     allowed_types = ["image/jpeg", "image/png"]
     # validate content type
     if file.content_type not in allowed_types:

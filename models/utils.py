@@ -135,16 +135,20 @@ def visulize_diff(source_image: np.ndarray, torch_pred: np.array, onnx_predictio
     fig, axes = plt.subplots(2, 2)
     axes[0, 0].imshow(segment_prediction_to_image(torch_pred))
     axes[0,0].set_title('Torch result')
+    axes[0, 0].axis("off")
 
     axes[0, 1].imshow(segment_prediction_to_image(onnx_prediction))
     axes[0,1].set_title('Onnx result')
+    axes[0, 1].axis("off")
 
     diff_img = get_compair_image(torch_pred, onnx_prediction)
     axes[1, 0].imshow(diff_img, cmap='gray')
-    axes[1,0].set_title('Difference (white)')
+    axes[1,0].set_title('Difference (shown in white)')
+    axes[1, 0].axis("off")
 
     axes[1, 1].imshow(source_image)
     axes[1,1].set_title('Source image')
+    axes[1, 1].axis("off")
 
     title = f'Pytorch pred vs Onnx pred'
     if text:

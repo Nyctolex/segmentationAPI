@@ -1,12 +1,24 @@
 
 import uvicorn
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI
 from api import segmentationInfrence
+from fastapi.middleware.cors import CORSMiddleware
+origins = [
+    "*"
+]
+
 app = FastAPI()
 app.include_router(segmentationInfrence.router)
 
-# TODO: README, pydentic, requirments, middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# TODO:  pydentic , docstring, another model
 
 if __name__ == "__main__":
-    # uvicorn main:app --reload    
     uvicorn.run(app)

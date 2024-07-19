@@ -1,4 +1,0 @@
-pip install matplotlib
-pip install numpy==1.26.4
-pip install onnx
-pip install onnxruntime
