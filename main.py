@@ -18,7 +18,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# TODO:   , docstring, 
-
 if __name__ == "__main__":
     uvicorn.run(app)

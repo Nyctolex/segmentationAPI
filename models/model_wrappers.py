@@ -9,11 +9,11 @@ from onnxruntime.capi.onnxruntime_inference_collection import InferenceSession
 import numpy as np
 from PIL.Image import Image as PILImage
 import numpy as np
-
+from typing import Union
 from models.utils import ImageToVector
 
 
-type ImageType  = str | Tensor | PILImage | np.array
+ImageType  = Union[str,  Tensor,  PILImage, np.array]
 
 
 class ModelWrapper(ABC):
