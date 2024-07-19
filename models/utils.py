@@ -36,22 +36,45 @@ def torch_to_onnx(model: Module, dummy_batch: Tensor) -> InferenceSession:
         InferenceSession: The onnx model
     """
     export_path  = f'temp_model_{uuid4()}.onnx'
+    # Create a temporary file of the onnx model
     onnx.export(model, dummy_batch, export_path, export_params=True)
+    # Load the model
     onnx_model = rt.InferenceSession(export_path)
+    # Remove temporary onnx file
     os.remove(export_path)
     return onnx_model
 
 
 class ImageToVector:
+    """Handles the conversion of an image object represented to a torch tensor / numpy array"""
 
     @classmethod
     def load_image(cls, path: str) -> PILImage:
+        """Loads an image from the momeory
+
+        Args:
+            path (str): The path to the image file (in the local memory)
+
+        Returns:
+            PILImage: A PIL.Image object of the image
+        """
         input_image = Image.open(path)
         input_image = input_image.convert("RGB")
         return input_image
 
     @classmethod
     def to_tensor(cls, image: str | ndarray | PILImage | Tensor) -> Tensor:
+        """Handle the conversion of any source image representation to a torch.Tensor representation
+
+        Args:
+            image (str | ndarray | PILImage | Tensor): The image
+
+        Raises:
+            TypeError: When passing the function an object of unsupported type of image, it would raise an error
+
+        Returns:
+            Tensor: The image as a torch tensor
+        """
         if isinstance(image, Tensor):
             return image
         if isinstance(image, str):
@@ -64,6 +87,17 @@ class ImageToVector:
 
     @classmethod
     def to_numpy(cls, image:  str | ndarray | PILImage | Tensor) -> ndarray:
+        """andle the conversion of any source image representation to a numpy array representation
+
+        Args:
+            image (str | ndarray | PILImage | Tensor): The image
+
+        Raises:
+            TypeError: When passing the function an object of unsupported type of image, it would raise an error
+
+        Returns:
+            ndarray: The image as a numpy array
+        """
         if isinstance(image, ndarray):
             return image
         if isinstance(image, str):
@@ -80,11 +114,11 @@ def segment_prediction_to_image(logits: np.array, outputsize: tuple[int, int] = 
     with a different color.
 
     Args:
-        logits (np.array): The logit prediction of the model (unbatched)
+        logits (np.array): The logit prediction of the model (unbatched) of shape [N, H, W] where N is the number of classes.
         outputsize (tuple[int, int], optional): The output's image size. Defaults to None.
 
     Returns:
-        np.array: The color image
+        np.array: The colored image
     """
     output_predictions = logits.argmax(0)
     n_classes = logits.shape[0]
@@ -100,6 +134,7 @@ def segment_prediction_to_image(logits: np.array, outputsize: tuple[int, int] = 
 
 
 def MSE(vector1: np.ndarray, vector2: np.ndarray) -> float:
+    """Return the L2 loss between two vectors"""
     assert len(vector1.shape) == len(vector2.shape)
     assert all([s[0] == s[1] for s in zip(vector1.shape, vector2.shape) ])
     return ((vector1 - vector2)**2).mean()

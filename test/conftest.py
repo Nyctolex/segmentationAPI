@@ -1,3 +1,4 @@
+import PIL.Image
 import pytest
 import os
 from fastapi.testclient import TestClient
@@ -6,6 +7,7 @@ import urllib
 from models.load_model import load_torch_model
 from torch.nn import Module
 from typing import Callable
+from PIL import Image
 
 @pytest.fixture
 def client():
@@ -30,6 +32,11 @@ def image_path() -> str:
         if not os.path.exists(filename):
             raise FileNotFoundError('No testing image file was found')
     return filename
+
+@pytest.fixture
+def example_image(image_path: str)-> Image.Image:
+    """Returns an example image for testing"""
+    return Image.open(image_path).convert('RGB')
 
 
 @pytest.fixture

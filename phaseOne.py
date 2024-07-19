@@ -15,33 +15,34 @@ from loguru import logger
 from PIL import Image
 
 
-def phase_one(torch_model: Optional[Module] = None, torch_preprocessor: Optional[Callable] = None, 
+
+def phase_one(torch_model: Module, torch_preprocessor: Callable, 
               photo_path: str = None, model_input_size: tuple[int, int] = (649, 520)):
     """Transfers a torch vision to an onnx model, run tests and visualize the metrics between the two.
 
     Args:
-        photo_path (str, optional): The photo used for evaluation. Defaults to None.
-        model_input_size (tuple[int, int], optional): The input dimmentions of the model. Defaults to (649, 520).
+        torch_model (Module): The model for evaluation
+        torch_preprocessor (Callable): The preprocessor of the model
+        photo_path (str, optional): An image for infrence. If no image is provided the function would 
+            use the default one. Defaults to None.
+        model_input_size (tuple[int, int], optional): The input shape image of the model (H, W). Defaults to (649, 520).
     """
+
+
+
     # import an example image
     logger.debug('Importing test image')
     if photo_path:
         input_image = Image.open(photo_path)
     else:
         input_image = load_dummy_image()
-    
-    if not torch_model:
-        #load torch model
-        logger.debug('Loading torch model')
-        torch_model, torch_preprocessor = load_torch_model()
-    else:
-        assert callable(torch_preprocessor), 'A callable preprocessor must be provided with the given model'
 
     input_image = input_image.resize(model_input_size, Image.BILINEAR)
     torch_image = torch_preprocessor(input_image).unsqueeze(0)
     np_image = torch_image.detach().cpu().numpy()
 
     #getting the onnx version of the torch model
+    logger.debug('Converting torch model to onnx model')
     onnx_model = torch_to_onnx(torch_model, torch_image)
 
     #Compair timings
@@ -72,6 +73,9 @@ def phase_one(torch_model: Optional[Module] = None, torch_preprocessor: Optional
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    
     parser.add_argument("--photo", type=str,  nargs='?', default=None, help="Path to the image to import for this demo")
     args = parser.parse_args()
-    phase_one(photo_path=args.photo)
+    logger.debug('Loading model and preprocessor')
+    torch_model, torch_preprocessor = load_torch_model()
+    phase_one(photo_path=args.photo, torch_model=torch_model, torch_preprocessor=torch_preprocessor)

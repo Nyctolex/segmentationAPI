@@ -17,6 +17,9 @@ type ImageType  = str | Tensor | PILImage | np.array
 
 
 class ModelWrapper(ABC):
+    """
+    An abtruct class for any model wrapper (torch, onnx, etc..)
+    """
     def __init__(self, model, preprocessor: Optional[Callable] = None):
         self.__model = None
         self.model = model
@@ -25,7 +28,7 @@ class ModelWrapper(ABC):
 
     @property
     @abstractmethod
-    def supported_model_types(self):
+    def supported_model_types(self) -> tuple:
         """Return a tuple of supported model types for the subclass."""
         raise NotImplementedError
 
@@ -45,7 +48,6 @@ class ModelWrapper(ABC):
     
     @model.setter
     def model(self, new_model):
-        print(new_model, type(new_model))
         if not self.validate_model_type(new_model):
             raise TypeError(f"Unsupported model type. Supported types are: {self.supported_model_types}")
         self.__model = new_model
@@ -57,10 +59,12 @@ class ModelWrapper(ABC):
     
     @abstractmethod
     def predict_single(self, *args, **kwargs):
+        """Return the model's prediction for a single input (unbatched)"""
         raise NotImplementedError
     
     @abstractmethod
     def predict_batch(self, *args, **kwargs):
+        """Return the model's prediction for a batch"""
         raise NotImplementedError
     
 
@@ -70,7 +74,7 @@ class TorchSegmentationWrapper(ModelWrapper):
         self.model.eval()
 
     @property
-    def supported_model_types(self):
+    def supported_model_types(self) -> tuple:
         return (Module,)
 
     def predict_batch(self, images: Tensor) -> Tensor:
@@ -112,14 +116,14 @@ class OnnxSegmentationWrapper(ModelWrapper):
 
 
     @property
-    def supported_model_types(self):
+    def supported_model_types(self) -> tuple:
         return (InferenceSession,)
 
-    def predict_batch(self, images: np.array, use_preprocessor = True) -> np.array:
+    def predict_batch(self, images: np.ndarray, use_preprocessor = True) -> np.ndarray:
         """Prediction of a batch
 
         Args:
-            images (np.array): batch of images in shape [N, 3, H, W]
+            images (np.ndarray): batch of images in shape [N, 3, H, W]
             use_preprocessor (bool): should it use the preprocessor
 
         Returns:
@@ -130,23 +134,15 @@ class OnnxSegmentationWrapper(ModelWrapper):
         model_input = {self.model.get_inputs()[0].name: images}
         return self.model.run(self.output_names, model_input)[0]
     
-    @staticmethod
-    def permute_image(image: np.array) -> np.array:
-        """
-        Permute image of [H, W, 3] to [3, H, W] if needed
-        """
-        if image.shape[0] != 3 and image.shape[-1] == 3:
-            image = np.transpose(image, (2, 1, 0))
-        return image
     
-    def predict_single(self, image: ImageType, use_preprocessor=False) -> np.array:
+    def predict_single(self, image: ImageType) -> np.ndarray:
         """Prediction of a single data point (unbatched)
 
         Args:
-            image (ImageType): The input image (unbatched) of shape [3, H, W]
+            image (ImageType): The input image (unbatched)
 
         Returns:
-            np.array: The prediction of the model
+            np.ndarray: The prediction of the model
         """
         if self.preprocessor:
             image = self.preprocessor(image)
@@ -159,6 +155,7 @@ class OnnxSegmentationWrapper(ModelWrapper):
 
 class SegmentationModelAI:
     def __init__(self, model, preprocessor: Optional[Callable] = None):
+        # Use the correct type of wrapper for the model
         if isinstance(model, Module):
             self.model = TorchSegmentationWrapper(model, preprocessor)
         elif isinstance(model, InferenceSession):

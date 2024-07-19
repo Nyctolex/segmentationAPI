@@ -23,6 +23,14 @@ model = SegmentationModelAI(model, preprocess)
 
 
 def segmentation_infer(image: Image.Image) -> bytes:
+    """Preforms infer using a segmentation model of the given image, and returns a visualization of the result.
+
+    Args:
+        image (Image.Image): The image for infrence.
+
+    Returns:
+        bytes: An image, visualizing the prediction of the model.
+    """
     image = image.convert("RGB")
     original_size = image.size
     prediction = model(image)

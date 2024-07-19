@@ -23,6 +23,9 @@ router = APIRouter(
     500: {"model": ErrorResponseModel},
 })
 async def process_image_endpoint(file: UploadFile = File(...)):
+    """
+    An end point that gets an image and return an image with the visulized result of the segmentation model.
+    """
     allowed_types = ["image/jpeg", "image/png"]
     # validate content type
     if file.content_type not in allowed_types:

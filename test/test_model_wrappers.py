@@ -1,5 +1,5 @@
 
-from models.model_wrappers import TorchSegmentationWrapper, OnnxSegmentationWrapper
+from models.model_wrappers import TorchSegmentationWrapper, OnnxSegmentationWrapper, SegmentationModelAI
 from PIL.Image import Image as PILImage
 import unittest
 import pytest
@@ -8,7 +8,7 @@ import numpy as np
 from typing import Callable
 from skimage.transform import resize
 from onnxruntime.capi.onnxruntime_inference_collection import InferenceSession
-
+from PIL.Image import Image
 from models.utils import ImageToVector, torch_to_onnx
 
 
@@ -91,12 +91,13 @@ class TestTorchSegmentationWrapper(unittest.TestCase):
 
 class TestOnnxSegmentationWrapper(unittest.TestCase):
     @pytest.fixture(autouse=True)
-    def prepare_fixture(self, torch_model: torch.nn.Module, torch_preprocessor: Callable, image_path: str):
+    def prepare_fixture(self, torch_model: torch.nn.Module, torch_preprocessor: Callable, image_path: str, example_image:Image):
         # Converting the torch to onnx model
         dummy_batch = ImageToVector.to_tensor(image_path)
         dummy_batch = torch_preprocessor(dummy_batch).unsqueeze(0)
         self.model = torch_to_onnx(torch_model, dummy_batch)
         self.image_path = image_path
+        self.example_image = example_image
     
     def test_supported_model_types(self):
         with self.assertRaises(TypeError):
@@ -106,30 +107,50 @@ class TestOnnxSegmentationWrapper(unittest.TestCase):
         OnnxSegmentationWrapper(model=self.model)
     
     def test_predict_batch(self):
-        # to_float = lambda data: resize(data.astype(np.float32),(520, 649))
-        
         wrapper = OnnxSegmentationWrapper(model=self.model)
-        image = ImageToVector.to_numpy(self.image_path)
+        image = ImageToVector.to_numpy(self.example_image)
         image = np.transpose(image, (2, 0, 1))
         image = image.astype(np.float32)
         image = resize(image, (3, 520, 649))
         image = image[np.newaxis, :]
-
         res = wrapper.predict_batch(image)
         assert isinstance(res, np.ndarray)
         assert len(res.shape) == 4
 
     def test_predict_single(self):
-        preprocessor = lambda data: resize(data.astype(np.float32),(1, 3, 520, 649))
+        preprocessor = lambda data: resize(data.astype(np.float32),(3, 520, 649))
         wrapper = OnnxSegmentationWrapper(model=self.model, preprocessor = preprocessor)
-        res = wrapper.predict_single(self.image_path)
+        image = ImageToVector.to_numpy(self.example_image)
+        image = np.transpose(image, (2, 0, 1))
+        res = wrapper.predict_single(image)
         assert isinstance(res, np.ndarray)
         assert len(res.shape) == 3
 
+class TestSegmentationModelAI(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def prepare_fixture(self, torch_model: torch.nn.Module, torch_preprocessor: Callable, image_path: str, example_image:Image):
+        # Converting the torch to onnx model
+        dummy_batch = ImageToVector.to_tensor(image_path)
+        dummy_batch = torch_preprocessor(dummy_batch).unsqueeze(0)
+        self.onnx_model = torch_to_onnx(torch_model, dummy_batch)
+        self.torch_model = torch_model
+        self.torch_preprocessor = torch_preprocessor
+        self.onnx_preprocessor = None
+        self.image_path = image_path
+        self.example_image = example_image
 
+    def test_call(self):
+        # test unsupported models
+        with self.assertRaises(TypeError):
+            SegmentationModelAI('str', self.torch_preprocessor)
+            SegmentationModelAI('str', 'str')
+        # Testing using a torch model
+        torch_version =  SegmentationModelAI(self.torch_model, self.torch_preprocessor)
+        torch_res = torch_version(self.example_image)
+        assert isinstance(torch_res, np.ndarray)
 
-    
-
-
-
-
+        # Testing using an onnx model
+        preprocessor = lambda data: resize(np.array(data, dtype=np.float32),(3, 520, 649))
+        onnx_version = SegmentationModelAI(self.onnx_model, preprocessor)
+        onnx_res = onnx_version(self.example_image)
+        assert isinstance(onnx_res, np.ndarray)
