@@ -1,5 +1,10 @@
 # segmentationAPI
 
+<a href="https://pytorch.org/"><img alt="PyTorch Version" src="https://img.shields.io/badge/PyTorch-2.2.2-blue?logo=pytorch&style=flat-square"></a>
+[![python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.1.0-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
+
+
 #### Setup Environment 
 - Create a virtual env using conda/python.
 - Run `pip install -r requiement.txt` to install all dependencies.
